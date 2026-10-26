@@ -1,9 +1,12 @@
+import streamlit as st
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error, r2_score
 
+# 1. Add a title to your app
+st.title("Solar Power Prediction Model")
 
 np.random.seed(42)
 num_samples = 1000
@@ -16,10 +19,8 @@ wind_speed = np.random.uniform(0, 15, num_samples)
 
 efficiency_factor = 0.20
 power_output = (irradiance * efficiency_factor) * (1 - cloud_cover/200) * (1 - (temperature-25)*0.005)
-
 power_output += np.random.normal(0, 5, num_samples)
 power_output = np.maximum(power_output, 0)
-
 
 data = pd.DataFrame({
     'Irradiance_W/m2': irradiance,
@@ -30,31 +31,27 @@ data = pd.DataFrame({
     'Power_Output_kW': power_output
 })
 
-print("Dataset Preview:")
-print(data.head(), "\n")
-
+# 2. Replace print() with st.write() and st.dataframe()
+st.subheader("Dataset Preview")
+st.dataframe(data.head())
 
 X = data.drop(columns=['Power_Output_kW'])
 y = data['Power_Output_kW']
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-print(f"Training samples: {X_train.shape[0]}, Testing samples: {X_test.shape[0]}\n")
+st.write(f"Training samples: {X_train.shape[0]}, Testing samples: {X_test.shape[0]}")
 
 model = RandomForestRegressor(n_estimators=100, random_state=42)
-
-
 model.fit(X_train, y_train)
-print("Model training complete.\n")
+st.success("Model training complete.")
 
 y_pred = model.predict(X_test)
-
-
 mae = mean_absolute_error(y_test, y_pred)
 r2 = r2_score(y_test, y_pred)
 
-print(f"--- Model Evaluation ---")
-print(f"Mean Absolute Error (MAE): {mae:.2f} kW (Average prediction error)")
-print(f"R-squared (Accuracy):      {r2 * 100:.2f}%\n")
+st.subheader("Model Evaluation")
+st.write(f"**Mean Absolute Error (MAE):** {mae:.2f} kW")
+st.write(f"**R-squared (Accuracy):** {r2 * 100:.2f}%")
 
 importances = model.feature_importances_
 feature_importance_df = pd.DataFrame({
@@ -62,8 +59,8 @@ feature_importance_df = pd.DataFrame({
     'Importance': importances
 }).sort_values(by='Importance', ascending=False)
 
-print("--- Feature Importance ---")
-print(feature_importance_df.to_string(index=False), "\n")
+st.subheader("Feature Importance")
+st.dataframe(feature_importance_df)
 
 new_weather_forecast = pd.DataFrame({
     'Irradiance_W/m2': [850],
@@ -74,5 +71,6 @@ new_weather_forecast = pd.DataFrame({
 })
 
 predicted_power = model.predict(new_weather_forecast)
-print("--- Prediction for Tomorrow ---")
-print(f"Expected Solar Power Output: {predicted_power[0]:.2f} kW")
+
+st.subheader("Prediction for Tomorrow")
+st.info(f"Expected Solar Power Output: **{predicted_power[0]:.2f} kW**")
